@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Driver Saathi</title>
+<style>
+:root{--bg:#e8ecef;--sf:#fff;--ink:#1c2631;--mute:#5d6b79;--line:#cfd7de;--good:#12834f;--bad:#c73a3a;--ac:#e8590c;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10161c;--sf:#1a232d;--ink:#eaf0f5;--mute:#98a7b5;--line:#2b3846;--good:#3cc98a;--bad:#ff7b7b;--ac:#ff8a3d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10161c;--sf:#1a232d;--ink:#eaf0f5;--mute:#98a7b5;--line:#2b3846;--good:#3cc98a;--bad:#ff7b7b;--ac:#ff8a3d;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px 14px 110px}
+h1{font-size:22px;margin:0 0 12px;font-weight:800}
+h2{font-size:18px;margin:18px 0 8px}
+.card{background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.hero{background:var(--ink);color:var(--bg);border-radius:20px;padding:18px;margin-bottom:12px}
+.hero small{opacity:.78;font-size:15px}
+.big{font-size:46px;font-weight:800;line-height:1.1;letter-spacing:-1px}
+.big.neg{color:#ff9a9a}
+.big span{font-size:18px;letter-spacing:0;margin-left:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{display:block;font-size:21px}.stat span{color:var(--mute);font-size:14px}
+.g{color:var(--good)}.r{color:var(--bad)}
+label{display:block;font-weight:600;margin:0 0 6px}
+input,select,textarea{width:100%;padding:13px;margin-bottom:10px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+textarea{font:14px/1.3 monospace;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;padding:14px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:800 17px inherit}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--line);font-weight:700}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.seg button{padding:13px;border-radius:12px;border:2px solid var(--line);background:transparent;color:var(--ink);font:700 16px inherit}
+.seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row>div{flex:1;min-width:0}.row p{margin:0}.row small{color:var(--mute);font-size:14px}
+.amt{font-weight:800;white-space:nowrap;text-align:right}.amt small{display:block;font-weight:400}
+.x{border:0;background:transparent;color:var(--mute);font-size:24px;padding:2px 8px}
+.chip{border:0;background:var(--line);color:var(--ink);border-radius:99px;padding:6px 12px;font:600 14px inherit}
+.empty{color:var(--mute);text-align:center;padding:12px 0}
+.trip{width:100%;text-align:left;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:12px;margin-bottom:8px;font:inherit;display:flex;justify-content:space-between;gap:10px}
+.trip[aria-current="true"]{border-color:var(--ac)}
+.hint{color:var(--mute);font-size:14px;margin:0 0 10px}
+.msg{margin:8px 0 0;font-weight:600}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--sf);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{border:0;background:transparent;color:var(--mute);padding:9px 2px 8px;font:600 12px inherit}
+nav button span{display:block;font-size:22px}
+nav button[aria-selected="true"]{color:var(--ac)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>🚚 Driver Saathi</h1>
+
+<!-- TRIP -->
+<section id="p-trip">
+  <div class="card" id="t-new0" hidden>
+    <label for="tn0">Pehli trip ka naam</label>
+    <input id="tn0" placeholder="Jaise: Lucknow - Nagpur - Banglore" maxlength="50">
+    <button class="btn" id="tmk0">Trip shuru karo</button>
+  </div>
+  <div id="t-app" hidden>
+    <div class="hero"><small id="tname"></small><div class="big" id="tnet">₹0</div><small>Hath mein bacha (mila − kharcha)</small></div>
+    <div class="grid">
+      <div class="stat"><b class="g" id="tin">₹0</b><span>Total mila</span></div>
+      <div class="stat"><b class="r" id="tout">₹0</b><span>Total kharcha</span></div>
+    </div>
+    <div class="card">
+      <div class="seg"><button id="bi" aria-pressed="true">+ Paisa mila</button><button id="bo" aria-pressed="false">− Kharcha</button></div>
+      <div id="catbox" hidden><label for="cat">Kharcha kis cheez ka?</label>
+        <select id="cat"><option>Khana</option><option>Police / Border</option><option>Diesel</option><option>Repair / Tyre</option><option>Toll</option><option>Dusra</option></select></div>
+      <label for="amt">Kitna paisa (₹)</label><input id="amt" type="number" inputmode="numeric" min="0" placeholder="5000">
+      <label for="place">Kahan?</label><input id="place" maxlength="40" placeholder="Jaise: Nagpur">
+      <button class="btn" id="tadd">Save karo</button>
+    </div>
+    <button class="btn alt" id="tsend" style="margin-bottom:12px">Is trip ka hisaab WhatsApp par bhejo</button>
+    <p class="msg" id="tmsg" role="status"></p>
+    <h2>Is trip ki entries</h2><div class="card" id="tlist"></div>
+    <h2>Meri saari trips</h2><div id="ttrips"></div>
+    <div class="card"><label for="tn">Nayi trip ka naam</label><input id="tn" maxlength="50" placeholder="Jaise: Nagpur - Hyderabad"><button class="btn alt" id="tmk">+ Nayi trip shuru karo</button></div>
+  </div>
+</section>
+
+<!-- DIESEL -->
+<section id="p-diesel" hidden>
+  <div class="hero"><small>Gaadi ka average mileage</small><div class="big"><b id="davg">—</b><span>KM / litre</span></div><small id="dlast">Kam se kam 2 baar diesel likhna padega</small></div>
+  <div class="grid">
+    <div class="stat"><b id="dl">0 L</b><span>Total diesel</span></div>
+    <div class="stat"><b id="dc">₹0</b><span>Diesel kharcha</span></div>
+    <div class="stat"><b id="dk">0</b><span>Total KM chali</span></div>
+    <div class="stat"><b id="dp">—</b><span>Kharcha per KM</span></div>
+  </div>
+  <div class="card">
+    <p class="hint">Har baar <b>tank full</b> karwa ke likho, tabhi mileage sahi aayega.</p>
+    <label for="odo">Meter par kitne KM</label><input id="odo" type="number" inputmode="numeric" min="0" placeholder="245800">
+    <div class="two"><div><label for="lit">Diesel (litre)</label><input id="lit" type="number" inputmode="decimal" min="0" placeholder="120"></div>
+    <div><label for="rate">Rate (₹/L)</label><input id="rate" type="number" inputmode="decimal" min="0" placeholder="90"></div></div>
+    <label for="dpl">Kahan se dala?</label><input id="dpl" maxlength="40" placeholder="Jaise: Nagpur pump">
+    <button class="btn" id="dadd">Diesel entry save karo</button><p class="msg" id="dmsg" role="status"></p>
+  </div>
+  <h2>Diesel ki entries</h2><div class="card" id="dlist"></div>
+</section>
+
+<!-- KHATA -->
+<section id="p-khata" hidden>
+  <div class="grid">
+    <div class="stat"><b class="g" id="klena">₹0</b><span>Mujhe lena hai</span></div>
+    <div class="stat"><b class="r" id="kdena">₹0</b><span>Mujhe dena hai</span></div>
+  </div>
+  <div class="card">
+    <div class="seg"><button id="kl" aria-pressed="true">Mujhe lena hai</button><button id="kd" aria-pressed="false">Mujhe dena hai</button></div>
+    <label for="kwho">Kiske saath? (naam)</label><input id="kwho" maxlength="40" placeholder="Jaise: Maalik, Ramesh">
+    <label for="kamt">Kitna paisa (₹)</label><input id="kamt" type="number" inputmode="numeric" min="0" placeholder="2000">
+    <label for="knote">Kis liye? (optional)</label><input id="knote" maxlength="50" placeholder="Jaise: advance, udhaar">
+    <button class="btn" id="kadd">Khate mein likho</button><p class="msg" id="kmsg" role="status"></p>
+  </div>
+  <h2>Baaki hisaab</h2><div class="card" id="klist"></div>
+</section>
+
+<!-- KAAGAZ -->
+<section id="p-docs" hidden>
+  <p class="hint">Gaadi ke kaagaz ki aakhri date likh de. Date paas aane par laal rang mein dikhega.</p>
+  <div class="card">
+    <label for="dname">Kaunsa kaagaz?</label><input id="dname" list="dnames" maxlength="40" placeholder="Jaise: Insurance"><datalist id="dnames"><option>Insurance</option><option>Fitness</option><option>Permit</option><option>PUC</option><option>Road Tax</option><option>Driving Licence</option></datalist>
+    <label for="ddate">Kab tak chalega? (aakhri date)</label><input id="ddate" type="date">
+    <button class="btn" id="doadd">Kaagaz save karo</button><p class="msg" id="domsg" role="status"></p>
+  </div>
+  <h2>Meri gaadi ke kaagaz</h2><div class="card" id="dolist"></div>
+</section>
+
+<!-- BACKUP -->
+<section id="p-bk" hidden>
+  <div class="card">
+    <b>Backup (hisaab bachao)</b>
+    <p class="hint" style="margin-top:6px">Hafte mein ek baar poora hisaab WhatsApp par apne aap ko bhej de. Data ud jaye to wahi message yahan paste karke wapas la sakta hai.</p>
+    <button class="btn" id="bwa">WhatsApp par bhejo</button>
+    <button class="btn alt" id="bcp" style="margin-top:8px">Copy karo</button>
+    <label for="bbox" style="margin-top:16px">Wapas lana ho to backup yahan paste karo</label>
+    <textarea id="bbox" rows="4" placeholder="SABEK1:..."></textarea>
+    <button class="btn alt" id="brs">Hisaab wapas daalo</button>
+    <p class="msg" id="bmsg" role="status"></p>
+  </div>
+  <p class="hint">Purane Trip Hisaab ya Diesel Hisaab ka backup message bhi yahan paste karke le sakta hai. Data sirf tere phone ke browser mein save hota hai.</p>
+</section>
+</main>
+
+<nav role="tablist" aria-label="Menu">
+  <button role="tab" data-p="trip" aria-selected="true"><span>🚚</span>Trip</button>
+  <button role="tab" data-p="diesel" aria-selected="false"><span>⛽</span>Diesel</button>
+  <button role="tab" data-p="khata" aria-selected="false"><span>📒</span>Khata</button>
+  <button role="tab" data-p="docs" aria-selected="false"><span>📄</span>Kaagaz</button>
+  <button role="tab" data-p="bk" aria-selected="false"><span>💾</span>Backup</button>
+</nav>
+
+<script>
+(function(){
+  var KEY="driver-saathi-v1",st={trips:[],cur:null,fills:[],khata:[],docs:[]},tk="in",kk="lena";
+  var $=function(i){return document.getElementById(i)};
+  function norm(){st.trips=st.trips||[];st.fills=st.fills||[];st.khata=st.khata||[];st.docs=st.docs||[]}
+  try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);if(p&&typeof p==="object")st=p}}catch(e){}
+  norm();
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+  function n0(n){return Math.round(n).toLocaleString("en-IN")}
+  function n1(n){return (Math.round(n*10)/10).toLocaleString("en-IN")}
+  function rs(n){return "₹"+n0(Math.abs(n))}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function dt(t){return new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
+  function share(tx,mid){
+    function wa(){window.open("https://wa.me/?text="+encodeURIComponent(tx),"_blank");$(mid).textContent="Agar WhatsApp na khule to Copy karke khud bhej do."}
+    if(navigator.share){navigator.share({text:tx}).catch(function(e){if(!e||e.name!=="AbortError")wa()})}else{wa()}
+  }
+  function copy(tx,box,mid){
+    var b=$(box),ok=false;b.value=tx;b.select();b.setSelectionRange(0,tx.length);
+    try{ok=document.execCommand("copy")}catch(e){}
+    var done=function(){$(mid).textContent="Copy ho gaya. Ab WhatsApp mein paste karke bhej de."},fail=function(){$(mid).textContent="Box ka text dabake khud copy kar le."};
+    if(ok)done();else if(navigator.clipboard)navigator.clipboard.writeText(tx).then(done,fail);else fail();
+  }
+
+  /* tabs */
+  var tabs=document.querySelectorAll("nav button");
+  Array.prototype.forEach.call(tabs,function(b){b.onclick=function(){
+    Array.prototype.forEach.call(tabs,function(x){var on=x===b;x.setAttribute("aria-selected",on);$("p-"+x.getAttribute("data-p")).hidden=!on});
+    window.scrollTo(0,0);
+  }});
+
+  /* trip */
+  function cur(){return st.trips.filter(function(t){return t.id===st.cur})[0]}
+  function sums(t){var a=0,b=0;t.items.forEach(function(e){e.k==="in"?a+=e.a:b+=e.a});return{i:a,o:b,n:a-b}}
+  function newTrip(nm){var t={id:Date.now(),name:nm||"Nayi trip",items:[]};st.trips.push(t);st.cur=t.id;save();render();window.scrollTo(0,0)}
+  function rTrip(){
+    $("t-new0").hidden=!!st.trips.length;$("t-app").hidden=!st.trips.length;
+    if(!st.trips.length)return;
+    var t=cur();if(!t){t=st.trips[st.trips.length-1];st.cur=t.id}
+    var s=sums(t);
+    $("tname").textContent=t.name;$("tnet").textContent=(s.n<0?"−":"")+rs(s.n);$("tnet").className="big"+(s.n<0?" neg":"");
+    $("tin").textContent=rs(s.i);$("tout").textContent=rs(s.o);
+    $("tlist").innerHTML=t.items.length?t.items.slice().sort(function(a,b){return b.t-a.t}).map(function(e){
+      return '<div class="row"><div><p>'+esc((e.k==="in"?"Paisa mila":e.c)+(e.p?" · "+e.p:""))+'</p><small>'+dt(e.t)+'</small></div><span class="amt '+(e.k==="in"?"g":"r")+'">'+(e.k==="in"?"+":"−")+rs(e.a)+'</span><button class="x" data-ti="'+e.id+'" aria-label="Entry delete karo">×</button></div>'
+    }).join(""):'<div class="empty">Abhi kuch nahi likha. Paisa mile ya kharcha ho to upar likh le.</div>';
+    $("ttrips").innerHTML=st.trips.slice().reverse().map(function(x){var q=sums(x);
+      return '<button class="trip" data-tt="'+x.id+'"'+(x.id===st.cur?' aria-current="true"':'')+'><span>'+esc(x.name)+'</span><b class="'+(q.n<0?"r":"g")+'">'+(q.n<0?"−":"")+rs(q.n)+'</b></button>'}).join("");
+  }
+  function setTk(k){tk=k;$("bi").setAttribute("aria-pressed",k==="in");$("bo").setAttribute("aria-pressed",k==="out");$("catbox").hidden=k==="in"}
+  $("bi").onclick=function(){setTk("in")};$("bo").onclick=function(){setTk("out")};
+  $("tmk0").onclick=function(){newTrip($("tn0").value.trim())};
+  $("tmk").onclick=function(){newTrip($("tn").value.trim());$("tn").value=""};
+  $("tadd").onclick=function(){
+    var a=parseFloat($("amt").value),t=cur();if(!(a>0)){$("amt").focus();return}
+    t.items.push({id:Date.now(),t:Date.now(),k:tk,a:a,c:$("cat").value,p:$("place").value.trim()});
+    $("amt").value="";$("place").value="";$("tmsg").textContent="Save ho gaya ✅";save();render();
+  };
+  $("tsend").onclick=function(){
+    var t=cur(),s=sums(t),by={};
+    t.items.forEach(function(e){if(e.k==="out")by[e.c]=(by[e.c]||0)+e.a});
+    var tx="Trip: "+t.name+"\nTotal mila: "+rs(s.i)+"\nTotal kharcha: "+rs(s.o);
+    Object.keys(by).forEach(function(c){tx+="\n  - "+c+": "+rs(by[c])});
+    tx+="\nHath mein bacha: "+(s.n<0?"−":"")+rs(s.n);
+    share(tx,"tmsg");
+  };
+  $("tlist").onclick=function(ev){var id=ev.target.getAttribute("data-ti");if(id){var t=cur();t.items=t.items.filter(function(e){return String(e.id)!==id});save();render()}};
+  $("ttrips").onclick=function(ev){var b=ev.target.closest("[data-tt]");if(b){st.cur=Number(b.getAttribute("data-tt"));save();render()}};
+
+  /* diesel */
+  function rDiesel(){
+    var f=st.fills.slice().sort(function(a,b){return a.o-b.o}),km=0,lit=0,cost=0,tl=0,tc=0,last=null;
+    f.forEach(function(e,i){tl+=e.l;tc+=e.c||0;e.m=null;
+      if(i>0){var d=e.o-f[i-1].o;if(d>0&&e.l>0){e.m=d/e.l;km+=d;lit+=e.l;cost+=e.c||0;last=e.m}}});
+    $("davg").textContent=lit>0?n1(km/lit):"—";
+    $("dlast").textContent=last!==null?"Pichli baar ka mileage: "+n1(last)+" KM/litre":"Kam se kam 2 baar diesel likhna padega";
+    $("dl").textContent=n0(tl)+" L";$("dc").textContent="₹"+n0(tc);$("dk").textContent=n0(km);
+    $("dp").textContent=(km>0&&cost>0)?"₹"+n1(cost/km):"—";
+    $("dlist").innerHTML=f.length?f.slice().reverse().map(function(e){
+      return '<div class="row"><div><p>'+n1(e.l)+' litre diesel</p><small>'+dt(e.t)+' · '+n0(e.o)+' KM'+(e.p?" · "+esc(e.p):"")+'</small></div><span class="amt">'+(e.m!==null?n1(e.m)+' KM/L':'')+'<small>₹'+n0(e.c||0)+'</small></span><button class="x" data-di="'+e.id+'" aria-label="Entry delete karo">×</button></div>'
+    }).join(""):'<div class="empty">Abhi koi entry nahi. Diesel dalwane ke baad yahan likh.</div>';
+  }
+  $("dadd").onclick=function(){
+    var o=parseFloat($("odo").value),l=parseFloat($("lit").value),rt=parseFloat($("rate").value)||0,m=$("dmsg");
+    if(!(o>0)){m.textContent="Meter ke KM likho.";return}
+    if(!(l>0)){m.textContent="Kitne litre diesel dala, wo likho.";return}
+    if(st.fills.some(function(e){return e.o===o})){m.textContent="Ye KM pehle se likha hai. Meter dobara dekh.";return}
+    st.fills.push({id:Date.now(),t:Date.now(),o:o,l:l,c:rt>0?l*rt:0,p:$("dpl").value.trim()});
+    $("odo").value="";$("lit").value="";$("dpl").value="";m.textContent="Save ho gaya ✅";save();render();
+  };
+  $("dlist").onclick=function(ev){var id=ev.target.getAttribute("data-di");if(id){st.fills=st.fills.filter(function(e){return String(e.id)!==id});save();render()}};
+
+  /* khata */
+  function rKhata(){
+    var a=0,b=0;st.khata.forEach(function(e){if(!e.d)e.k==="lena"?a+=e.a:b+=e.a});
+    $("klena").textContent=rs(a);$("kdena").textContent=rs(b);
+    $("klist").innerHTML=st.khata.length?st.khata.slice().sort(function(x,y){return (x.d?1:0)-(y.d?1:0)||y.t-x.t}).map(function(e){
+      return '<div class="row" style="opacity:'+(e.d?.5:1)+'"><div><p>'+esc(e.w)+(e.d?" (khatam)":"")+'</p><small>'+dt(e.t)+(e.n?" · "+esc(e.n):"")+'</small></div><span class="amt '+(e.k==="lena"?"g":"r")+'">'+rs(e.a)+'<small>'+(e.k==="lena"?"lena hai":"dena hai")+'</small></span><button class="chip" data-kd="'+e.id+'">'+(e.d?"Wapas":"Hisaab ho gaya")+'</button><button class="x" data-kx="'+e.id+'" aria-label="Entry delete karo">×</button></div>'
+    }).join(""):'<div class="empty">Koi udhaar ya advance nahi likha.</div>';
+  }
+  $("kl").onclick=function(){kk="lena";$("kl").setAttribute("aria-pressed",true);$("kd").setAttribute("aria-pressed",false)};
+  $("kd").onclick=function(){kk="dena";$("kd").setAttribute("aria-pressed",true);$("kl").setAttribute("aria-pressed",false)};
+  $("kadd").onclick=function(){
+    var a=parseFloat($("kamt").value),w=$("kwho").value.trim(),m=$("kmsg");
+    if(!w){m.textContent="Naam likho.";return}
+    if(!(a>0)){m.textContent="Paisa likho.";return}
+    st.khata.push({id:Date.now(),t:Date.now(),k:kk,a:a,w:w,n:$("knote").value.trim(),d:false});
+    $("kwho").value="";$("kamt").value="";$("knote").value="";m.textContent="Khate mein likh diya ✅";save();render();
+  };
+  $("klist").onclick=function(ev){
+    var d=ev.target.getAttribute("data-kd"),x=ev.target.getAttribute("data-kx");
+    if(d){st.khata.forEach(function(e){if(String(e.id)===d)e.d=!e.d});save();render()}
+    if(x){st.khata=st.khata.filter(function(e){return String(e.id)!==x});save();render()}
+  };
+
+  /* kaagaz */
+  function rDocs(){
+    var td=new Date();td.setHours(0,0,0,0);
+    $("dolist").innerHTML=st.docs.length?st.docs.slice().sort(function(a,b){return a.e.localeCompare(b.e)}).map(function(e){
+      var left=Math.round((new Date(e.e+"T00:00:00")-td)/864e5),c=left<0?"r":left<=15?"r":"g",tx=left<0?Math.abs(left)+" din pehle khatam":left===0?"Aaj khatam":left+" din baaki";
+      return '<div class="row"><div><p>'+esc(e.n)+'</p><small>'+new Date(e.e+"T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})+'</small></div><span class="amt '+c+'">'+tx+'</span><button class="x" data-ox="'+e.id+'" aria-label="Kaagaz delete karo">×</button></div>'
+    }).join(""):'<div class="empty">Abhi koi kaagaz nahi likha.</div>';
+  }
+  $("doadd").onclick=function(){
+    var n=$("dname").value.trim(),e=$("ddate").value,m=$("domsg");
+    if(!n){m.textContent="Kaagaz ka naam likho.";return}
+    if(!e){m.textContent="Aakhri date chuno.";return}
+    st.docs.push({id:Date.now(),n:n,e:e});$("dname").value="";$("ddate").value="";m.textContent="Save ho gaya ✅";save();render();
+  };
+  $("dolist").onclick=function(ev){var x=ev.target.getAttribute("data-ox");if(x){st.docs=st.docs.filter(function(e){return String(e.id)!==x});save();render()}};
+
+  /* backup */
+  function mk(){return "Driver Saathi backup, isse save rakho:\nSABEK1:"+btoa(unescape(encodeURIComponent(JSON.stringify(st))))}
+  $("bwa").onclick=function(){var tx=mk();$("bbox").value=tx;share(tx,"bmsg")};
+  $("bcp").onclick=function(){copy(mk(),"bbox","bmsg")};
+  $("brs").onclick=function(){
+    var m=/(SABEK1|TRIPHISAAB1|DIESEL1):([A-Za-z0-9+\/=]+)/.exec($("bbox").value.replace(/\s+/g,""));
+    if(!m){$("bmsg").textContent="Backup nahi mila. WhatsApp wala poora message yahan paste kar.";return}
+    try{
+      var d=JSON.parse(decodeURIComponent(escape(atob(m[2]))));
+      if(m[1]==="SABEK1"){if(!d||typeof d!=="object")throw 0;st=d;norm()}
+      else if(m[1]==="TRIPHISAAB1"){if(!d.trips)throw 0;st.trips=d.trips;st.cur=d.cur}
+      else{if(!d.fills)throw 0;st.fills=d.fills}
+      save();render();$("bmsg").textContent="Hisaab wapas aa gaya ✅";
+    }catch(e){$("bmsg").textContent="Backup adhoora copy hua hai. Poora message dobara paste kar."}
+  };
+
+  function render(){rTrip();rDiesel();rKhata();rDocs()}
+  render();
+})();
+</script>
+</body>
+</html>
