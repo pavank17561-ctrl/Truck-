@@ -1,0 +1,29 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+      - name: Unpack
+        run: |
+          unzip -o android.zip
+          mkdir -p app/src/main/assets
+          if [ -f truck-trip-2.html ]; then F=truck-trip-2.html; else F=truck-trip.html; fi
+          cp "$F" app/src/main/assets/index.html
+      - run: gradle assembleDebug --no-daemon
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          files: app/build/outputs/apk/debug/app-debug.apk
