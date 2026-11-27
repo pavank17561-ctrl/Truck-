@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Truck Trip Tracker</title>
+<style>
+:root{--bg:#f5f5f2;--card:#fff;--tx:#1a1a1a;--mu:#666;--ac:#e8590c;--gr:#2b8a3e;--bd:#ddd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121212;--card:#1e1e1e;--tx:#f0f0f0;--mu:#aaa;--bd:#333}}
+:root[data-theme="dark"]{--bg:#121212;--card:#1e1e1e;--tx:#f0f0f0;--mu:#aaa;--bd:#333}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif;padding:14px;max-width:520px;margin:auto}
+h1{font-size:20px;margin:4px 0 12px}.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}input{width:100%;padding:12px;font-size:17px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-radius:12px;background:var(--ac);color:#fff;margin-top:10px}
+button.g{background:var(--gr)}button.o{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.big{font-size:30px;font-weight:700}.sm{font-size:12px;color:var(--mu)}
+.st{display:inline-block;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:600}.run{background:var(--gr);color:#fff}.stop{background:#868e96;color:#fff}
+.bar{height:12px;background:var(--bd);border-radius:8px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
+.h{border-top:1px solid var(--bd);padding:10px 0}.hide{display:none}
+#map{height:240px;border-radius:12px;margin-top:10px}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script></head><body>
+<h1>🚛 Truck Trip Tracker</h1>
+
+<div id="setup" class="card">
+<label>Route (jaise Lucknow - Bangalore - Lucknow)</label><input id="route" placeholder="Lucknow - Bangalore - Lucknow">
+<label>Tank capacity (litre)</label><input id="cap" type="number" inputmode="decimal" value="400">
+<label>Andaaza average (km/litre) — live diesel ke liye</label><input id="avg" type="number" inputmode="decimal" value="4">
+<label>Kahan jaana hai (shehar ka naam, jaise Patna)</label><input id="dest" placeholder="Patna"><label>Gaadi ka odometer abhi (KM) — GPS na chale to yehi kaam aayega</label><input id="odo0" type="number" inputmode="decimal">
+<button onclick="startTrip()">▶ Trip ON (full tank + load ho gaya)</button>
+</div>
+
+<div id="live" class="hide">
+<div class="card"><span id="stat" class="st stop">Khadi hai</span> <span class="sm" id="gps"></span>
+<div class="grid" style="margin-top:10px">
+<div><div class="sm">Chali (KM)</div><div class="big" id="km">0.0</div></div>
+<div><div class="sm">Speed</div><div class="big" id="spd">0</div></div>
+<div><div class="sm">Diesel lagbhag kharch (L)</div><div class="big" id="used">0</div></div>
+<div><div class="sm">Tank me lagbhag bacha (L)</div><div class="big" id="left">0</div></div></div>
+<div class="bar"><i id="barf" style="width:100%"></i></div>
+<div class="sm" style="margin-top:8px">Live diesel andaaza = KM ÷ andaaza average. Sahi average trip end pe aayega.</div><div id="dst" style="font-weight:700;margin-top:8px"></div><div id="map"></div></div>
+<div class="card"><div class="sm">Is trip me raste me dala diesel: <b id="fl">0</b> L &nbsp;|&nbsp; Legs: <b id="lg">0</b></div>
+<label>Odometer abhi (KM) — daalke KM update karo</label><input id="odon" type="number" inputmode="decimal"><button class="o" onclick="setOdo()">🔄 Odometer se KM update</button><label>Raste me diesel dalwaya (litre)</label><input id="fin" type="number" inputmode="decimal">
+<button class="o" onclick="addFill()">⛽ Diesel add karo</button>
+<button class="o" onclick="markLeg()">📍 Destination pahunch gaya (return shuru)</button></div>
+<div class="card"><label>Odometer end (KM)</label><input id="odoe" type="number" inputmode="decimal"><label>Trip end: usi pump pe full tank me kitna diesel aaya (litre)</label><input id="fend" type="number" inputmode="decimal">
+<button class="g" onclick="endTrip()">⏹ Trip OFF aur poora hisaab</button></div>
+</div>
+
+<div id="res" class="card hide"></div>
+<div class="card"><b>Purane trips</b><div id="hist" class="sm"></div></div>
+
+<script>
+var S=null,H=[],wid=null,last=null,moving=false,wl=null,map=null,mk=null,pl=null,pts=[],nt=null;
+function showMap(lat,lon){try{if(!window.L)return;if(!map){map=L.map("map").setView([lat,lon],15);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"\u00a9 OpenStreetMap"}).addTo(map);mk=L.circleMarker([lat,lon],{radius:8}).addTo(map);pl=L.polyline([],{weight:4}).addTo(map)}
+if(S&&S.dlat!=null&&!dmk)dmk=L.circleMarker([S.dlat,S.dlon],{radius:8,color:"#e03131"}).addTo(map).bindTooltip(S.dest);mk.setLatLng([lat,lon]);pts.push([lat,lon]);if(pts.length>800)pts.shift();pl.setLatLngs(pts);map.panTo([lat,lon])}catch(e){}}
+var cur=null,lastPt=null,rm=null,dmk=null;
+function jget(u,cb){fetch(u).then(function(r){return r.json()}).then(cb).catch(function(){cb(null)})}
+function geo(q){jget("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q),function(r){if(r&&r[0]&&S){S.dlat=+r[0].lat;S.dlon=+r[0].lon;sv()}})}
+function addPt(lat,lon){cur=[lat,lon];if(!S)return;
+ if(!lastPt||hav(lastPt[0],lastPt[1],lat,lon)>=0.1){lastPt=[lat,lon];if(!window.Native)S.trk.push([+lat.toFixed(5),+lon.toFixed(5),Math.round(Date.now()/1000)])}
+ if(S.dlat!=null){var s=hav(lat,lon,S.dlat,S.dlon);
+  if(!S.rt||Date.now()-S.rt>60000){S.rt=Date.now();jget("https://router.project-osrm.org/route/v1/driving/"+lon+","+lat+";"+S.dlon+","+S.dlat+"?overview=false",function(r){if(r&&r.routes&&r.routes[0]&&S){S.rem=r.routes[0].distance/1000}})}
+  $("dst").textContent="\ud83d\udccd "+S.dest+": "+(S.rem!=null?S.rem.toFixed(0)+" km baaki (road)":s.toFixed(0)+" km seedha")}}
+function getTrk(){var a=[];try{if(window.Native){Native.getTrack().split("\n").forEach(function(l){var p=l.split(",");if(p.length>2)a.push([+p[0],+p[1],+p[2]])})}else a=S.trk}catch(e){a=S.trk||[]}
+ var st=Math.ceil(a.length/1500)||1;return a.filter(function(_,i){return i%st==0})}
+function showH(i){var r=H[i];$("res").innerHTML="<b>"+r.route+"</b> ("+r.date+")<br>"+r.km+" km \u00b7 "+r.diesel+" L \u00b7 avg "+r.avg+" km/L";showRes(r);$("res").scrollIntoView()}
+function showRes(r){var x=$("res");x.classList.remove("hide");
+ x.insertAdjacentHTML("beforeend","<div id='rmap' style='height:320px;border-radius:12px;margin-top:10px'></div><div id='rt' class='sm' style='margin-top:8px;line-height:1.7'></div>");
+ setTimeout(function(){try{
+  if(rm){rm.remove();rm=null}
+  var T=r.trk||[];if(T.length<2){$("rt").textContent="Is trip ka route GPS data nahi mila.";return}
+  rm=L.map("rmap");L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(rm);
+  var cut=(r.marks&&r.marks[0])?r.marks[0].t:9e12;
+  var A=T.filter(function(p){return p[2]<=cut}),B=T.filter(function(p){return p[2]>cut});
+  function ll(a){return a.map(function(p){return[p[0],p[1]]})}
+  if(A.length>1)L.polyline(ll(A),{color:"#1c7ed6",weight:5}).addTo(rm);
+  if(B.length>1)L.polyline(ll(B),{color:"#e8590c",weight:5}).addTo(rm);
+  function pin(p,t,c){if(p&&p[0])L.circleMarker([p[0],p[1]],{radius:7,color:c,fillOpacity:1}).addTo(rm).bindTooltip(t,{permanent:true})}
+  pin(T[0],"Start","#2b8a3e");pin(T[T.length-1],"End","#c92a2a");
+  (r.marks||[]).forEach(function(m){pin([m.lat,m.lon],"Destination","#7048e8")});
+  (r.fl||[]).forEach(function(f){pin(f.p,"Diesel "+f.l+"L","#f08c00")});
+  rm.fitBounds(L.polyline(ll(T)).getBounds());
+  var N=[],P=[],n=Math.min(24,T.length-1);for(var i=0;i<=n;i++)P.push(T[Math.floor(i*(T.length-1)/n)]);
+  function paint(){var o=[],b=[];N.forEach(function(q){var a=q[1]<=cut?o:b;if(q[0]&&a[a.length-1]!==q[0])a.push(q[0])});
+   $("rt").innerHTML="\ud83d\udd35 "+(cut<9e12?"Jaane ka rasta: ":"Rasta: ")+(o.join(" \u2192 ")||"...")+(cut<9e12?"<br>\ud83d\udfe0 Wapsi ka rasta: "+(b.join(" \u2192 ")||"..."):"")}
+  paint();
+  (function nx(i){if(i>=P.length)return;var p=P[i];jget("https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat="+p[0]+"&lon="+p[1],function(d){var a=(d&&d.address)||{};N.push([a.city||a.town||a.village||a.county||a.state_district||"",p[2]]);paint();setTimeout(function(){nx(i+1)},1100)})})(0);
+ }catch(e){}},300)}
+function npoll(){try{var o=JSON.parse(Native.getState());S.km=(S.off||0)+o.km;moving=o.moving;$("spd").textContent=Math.round(o.speed);$("gps").textContent=o.fix?"GPS ok (\u00b1"+Math.round(o.acc)+" m) - app background me bhi chalega":"GPS dhundh raha hai...";if(o.fix){showMap(o.lat,o.lon);addPt(o.lat,o.lon)}sv();draw()}catch(e){}}
+document.addEventListener("visibilitychange",function(){if(S&&document.visibilityState==="visible"){try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(function(w){wl=w}).catch(function(){})}catch(e){}}});
+function ld(){try{S=JSON.parse(localStorage.getItem("tt_s")||"null");H=JSON.parse(localStorage.getItem("tt_h")||"[]")}catch(e){}}
+function sv(){try{localStorage.setItem("tt_s",JSON.stringify(S));localStorage.setItem("tt_h",JSON.stringify(H))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function hav(a,b,c,d){var R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(z))}
+function startTrip(){
+ S={route:$("route").value||"Trip",cap:+$("cap").value||400,avg:+$("avg").value||4,t0:Date.now(),km:0,odo0:+$("odo0").value||0,dest:$("dest").value.trim(),marks:[],fl:[],trk:[],fills:[],legs:[],legStart:0};
+ sv();begin(true)}
+function begin(isNew){
+ $("setup").classList.add("hide");$("live").classList.remove("hide");$("res").classList.add("hide");
+S.marks=S.marks||[];S.fl=S.fl||[];S.trk=S.trk||[];if(isNew&&dmk&&map){map.removeLayer(dmk);dmk=null}lastPt=null;if(S.dest&&S.dlat==null)geo(S.dest);
+ if(map)map.invalidateSize();
+ if(window.Native){Native.start(!!isNew);if(nt)clearInterval(nt);nt=setInterval(npoll,1000);draw();return}
+ if(!navigator.geolocation){$("gps").textContent="GPS nahi mila";return}
+ $("gps").textContent="GPS dhundh raha hai...";
+ try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(function(w){wl=w}).catch(function(){})}catch(e){}
+ wid=navigator.geolocation.watchPosition(pos,gerr,{enableHighAccuracy:true,maximumAge:0,timeout:30000});
+ draw()}
+function pos(p){
+ var c=p.coords,g=$("gps");showMap(c.latitude,c.longitude);addPt(c.latitude,c.longitude);
+ if(c.accuracy>150){g.textContent="Signal kamzor (±"+Math.round(c.accuracy)+" m) - khule me aao";return}
+ g.textContent="GPS ok (±"+Math.round(c.accuracy)+" m)";
+ var sp=(c.speed!=null&&c.speed>=0)?c.speed*3.6:null;
+ var cur={lat:c.latitude,lon:c.longitude,t:p.timestamp};
+ if(last){
+  var d=hav(last.lat,last.lon,cur.lat,cur.lon)*1000;
+  if(sp!=null){
+   last=cur;moving=sp>=4;
+   if(moving&&d<500){S.km+=d/1000;sv()}
+  }else{
+   if(d>=20){sp=d/Math.max((p.timestamp-last.t)/1000,1)*3.6;last=cur;moving=sp>=4;if(moving&&d<500){S.km+=d/1000;sv()}}
+   else sp=0
+  }
+ }else last=cur;
+ if(sp!=null&&sp<4)moving=false;
+ $("spd").textContent=Math.round(sp||0);draw()}
+function gerr(e){var g=$("gps");
+ if(e.code==1)g.textContent="Permission band - Chrome me Location Allow karo";
+ else if(e.code==2)g.textContent="GPS signal nahi mil raha - Location ON karo";
+ else g.textContent="GPS dhundh raha hai, thoda ruko..."}
+function fills(){return S.fills.reduce(function(a,b){return a+b},0)}
+function draw(){
+ if(!S)return;var used=S.km/S.avg,left=Math.max(S.cap+fills()-used,0);
+ $("km").textContent=S.km.toFixed(1);$("used").textContent=used.toFixed(1);$("left").textContent=left.toFixed(0);
+ $("barf").style.width=Math.min(100,left/S.cap*100)+"%";$("fl").textContent=fills();$("lg").textContent=S.legs.length;
+ var st=$("stat");st.textContent=moving?"Chal rahi hai":"Khadi hai";st.className="st "+(moving?"run":"stop")}
+function setOdo(){var v=+$("odon").value;if(S.odo0&&v>S.odo0){S.km=v-S.odo0;if(window.Native){try{S.off=S.km-JSON.parse(Native.getState()).km}catch(e){}}sv();draw()}else alert("Start me odometer daalna zaroori hai, aur ye usse zyada hona chahiye")}
+function addFill(){var v=+$("fin").value;if(v>0){S.fills.push(v);S.fl.push({l:v,p:cur,km:+S.km.toFixed(1)});$("fin").value="";sv();draw()}}
+function markLeg(){S.marks.push({lat:cur?cur[0]:0,lon:cur?cur[1]:0,t:Math.round(Date.now()/1000),km:+S.km.toFixed(1)});S.legs.push(+(S.km-S.legStart).toFixed(1));S.legStart=S.km;sv();draw()}
+function endTrip(){
+ var f=+$("fend").value;if(!(f>0)){alert("Pump pe jitna diesel aaya woh litre likho");return}
+ if(window.Native){try{Native.stop()}catch(e){}if(nt)clearInterval(nt)}pts=[];if(pl)pl.setLatLngs([]);if(wid!=null)navigator.geolocation.clearWatch(wid);try{wl&&wl.release()}catch(e){}
+ var oe=+$("odoe").value;if(S.odo0&&oe>S.odo0)S.km=oe-S.odo0;var tot=fills()+f,avg=S.km/tot,hrs=(Date.now()-S.t0)/36e5;
+ var r={route:S.route,km:+S.km.toFixed(1),diesel:+tot.toFixed(1),avg:+avg.toFixed(2),hrs:+hrs.toFixed(1),legs:S.legs.slice(),date:new Date().toLocaleDateString("en-IN"),dest:S.dest,marks:S.marks,fl:S.fl,trk:getTrk()};
+ H.unshift(r);S=null;last=null;sv();$("live").classList.add("hide");$("setup").classList.remove("hide");
+ var x=$("res");x.classList.remove("hide");
+ x.innerHTML="<b>✅ "+r.route+" — Poora Hisaab</b><div class='grid' style='margin-top:10px'><div><div class='sm'>Total KM</div><div class='big'>"+r.km+"</div></div><div><div class='sm'>Total diesel (L)</div><div class='big'>"+r.diesel+"</div></div><div><div class='sm'>Average (km/L)</div><div class='big'>"+r.avg+"</div></div><div><div class='sm'>Time (ghante)</div><div class='big'>"+r.hrs+"</div></div></div>"+(r.legs.length?"<div class='sm'>Legs KM: "+r.legs.join(" + ")+" + baaki return</div>":"");
+ showRes(r);hist()}
+function hist(){$("hist").innerHTML=H.length?H.map(function(r,i){return "<div class='h' onclick='showH("+i+")'><b>"+r.route+"</b> ("+r.date+")<br>"+r.km+" km · "+r.diesel+" L · avg "+r.avg+" km/L</div>"}).join(""):"Abhi koi trip nahi"}
+ld();hist();if(S)begin();
+</script></body></html>
